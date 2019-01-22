@@ -21,15 +21,23 @@ class RoombaSerialCommand(MycroftSkill):
 
     @intent_handler(IntentBuilder('ListRoomba').require('List').require('Roomba'))
     def handle_list_roomba(self, message):
-        self.speak( ', '.join(map(str, roomba_list)) )
+        if roomba_list:
+            self.speak( ', '.join(map(str, roomba_list)) )
+        else:
+            self.speak_dialog('no.roomba')
 
     @intent_handler(IntentBuilder('TellRoombaTo').require('Tell').require('Roomba').require('ToCommand'))
     def handle_tell_roomba_to(self, message):
         if roomba_list: # TODO, multiple roombas
-            roomba_command_url = 'http://%s/do/%s/' % ( roomba_list[0], message.data.get('ToCommand') )
-            response = urllib.request.urlopen(roomba_command_url)
-            roomba_response = response.read().decode('utf-8')
-            self.speak_dialog('roomba.responds', data={'roomba_response':roomba_response})
+            try:
+                roomba_command_url = 'http://%s/do/%s/' % ( roomba_list[0], message.data.get('ToCommand') )
+                response = urllib.request.urlopen(roomba_command_url)
+                roomba_response = response.read().decode('utf-8')
+                self.speak_dialog('roomba.responds', data={'roomba_response':roomba_response})
+            except:
+                # Roomba not hittable. Remove it from the list.
+                roomba_list.remove(roomba_list[0])
+                self.speak_dialog('no.roomba')
         else:
             self.speak_dialog('no.roomba')
 
